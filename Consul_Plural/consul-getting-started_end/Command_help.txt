@@ -1,0 +1,30 @@
+1. cd consul-getting-started_end
+2. vagrant status
+3. vagrant up
+4. vagrant status
+5. vagrant ssh consul-server
+6. consul agent -dev -advertise 172.20.20.31 -client 0.0.0.0
+Go to browser : http://172.20.20.31:8500/ui
+
+1. In new tab: vagrant ssh web1
+2. ip=$(ifconfig eth1 | grep 'inet addr' | awk '{ print substr($2,6) }')
+3. echo $ip
+4. consul agent -advertise $ip -config-file /vagrant/common.json -config-file /vagrant/web.service.json &
+5. /vagrant/provision/setup.web.sh
+Do step 1 to 4 for web2 and web3
+
+1. vagrant ssh lb
+2. /vagrant/provision/setup.lb.sh
+3. /vagrant/provision/install.consul-template.sh
+4 ip=$(ifconfig eth1 | grep 'inet addr' | awk '{ print substr($2,6) }')
+5. consul agent -advertise $ip -config-file /vagrant/common.json -config-file /vagrant/lb.service.json &
+6. consul-template -config /vagrant/provision/lb.consul-template.hcl &
+7. curl -X PUT -d '4096' http://localhost:8500/v1/kv/prod/portal/haproxy/maxconn
+curl -X PUT -d '5s' http://localhost:8500/v1/kv/prod/portal/haproxy/timeout-connect
+curl -X PUT -d '50s' http://localhost:8500/v1/kv/prod/portal/haproxy/timeout-server
+curl -X PUT -d '50s' http://localhost:8500/v1/kv/prod/portal/haproxy/timeout-client
+curl -X PUT -d 'enable' http://localhost:8500/v1/kv/prod/portal/haproxy/stats
+8. Go to browser: http://172.20.20.11/ip.html & http://172.20.20.11/haproxy
+9. Go to web3 and run 'docker stop web' and then 'docker start web'
+
+To clean all: vagrant destroy -f

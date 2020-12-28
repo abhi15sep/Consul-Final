@@ -1,0 +1,155 @@
+Sample: https://demo.consul.io/ui/
+        http://localhost:8500/
+        
+
+vagrant init --minimal wesmcclure/ubuntu1404-docker
+vagrant up
+vagrant ssh consul-server
+vagrant box list
+vagrant destroy -f consul-server
+vagrant status
+
+Start agent in Server dev mode:
+consul agent -dev -bind 0.0.0.0 -advertise 172.20.20.31
+Start agent in client mode:
+consul agent -config-file desky.consul.json
+
+HTTP API:
+https://www.consul.io/api/agent
+https://www.consul.io/api-docs/catalog
+http://localhost:8500/v1/catalog/nodes?pretty
+
+
+Interface DNS:
+On Agent(node)-> dig @localhost -p 8600 consul-server.node.consul
+On Agent(node) -> dig @localhost -p 8600 consul.service.consul
+On Agent(Servive port to connect) -> dig @localhost -p 8600 consul.service.consul SRV
+
+Get Info about local consul agent:
+> consul info
+> consul info -h
+
+List of nodes in consul cluster:
+> consul members
+
+See Consul agent logs:
+> consul monitor
+
+To see status of machine defined in Vagrant file:
+> vagrant status
+
+
+> vagrant ssh web1
+> ip=$(ifconfig eth1 | grep 'inet addr' | awk '{ print substr($2,6) }')
+> consul agent -advertise 172.20.20.21 -config-file common.json
+
+> vagrant ssh web2
+> ip=$(ifconfig eth1 | grep 'inet addr' | awk '{ print substr($2,6) }')
+> consul agent -advertise 172.20.20.22 -config-file common.json
+
+> vagrant ssh web3
+> ip=$(ifconfig eth1 | grep 'inet addr' | awk '{ print substr($2,6) }')
+> consul agent -advertise 172.20.20.23 -config-file common.json
+
+> vagrant ssh lb
+> ip=$(ifconfig eth1 | grep 'inet addr' | awk '{ print substr($2,6) }')
+> consul agent -advertise 172.20.20.11 -config-file common.json
+
+> consul members
+
+Services: ssh to web nodes
+> vagrant ssh web1
+> killall consul
+> ps aux | grep consul
+>consul agent -advertise 172.20.20.21 -config-file common.json -config-file web.service.json &
+> killall -s 1 consul    (To reload config using SIGHUP)
+> sudo vi setup.web.sh
+> sudo chmod +x setup.web.sh
+> ./setup.web.sh
+Try in browser:http://172.20.20.21:8080/ip.html
+> dig @localhost -p 8600 consul.service.consul SRV
+> dig @localhost -p 8600 web.service.consul SRV
+
+> vagrant ssh web2
+> killall consul
+> ps aux | grep consul
+> consul agent -advertise 172.20.20.22 -config-file common.json -config-file web.service.json &
+> killall -s 1 consul    (To reload config using SIGHUP)
+> sudo vi setup.web.sh
+> sudo chmod +x setup.web.sh
+> ./setup.web.sh
+Try in browser:http://172.20.20.22:8080/ip.html
+> dig @localhost -p 8600 web.service.consul SRV
+
+> vagrant ssh web3
+> killall consul
+> ps aux | grep consul
+> consul agent -advertise 172.20.20.23 -config-file common.json -config-file web.service.json &
+> killall -s 1 consul    (To reload config using SIGHUP)
+> sudo vi setup.web.sh
+> sudo chmod +x setup.web.sh
+> ./setup.web.sh
+Try in browser:http://172.20.20.23:8080/ip.html
+> dig @localhost -p 8600 web.service.consul SRV
+
+
+> curl http://localhost:8500/v1/catalog/service/web?pretty
+> curl http://localhost:8500/v1/health/service/web?pretty
+
+> vagrant ssh lb
+> killall consul
+> ps aux | grep consul
+> consul configtest -config-file lb.service.json
+> echo $?
+> consul agent -advertise 172.20.20.11 -config-file common.json -config-file lb.service.json &
+> killall -s 1 consul    (To reload config using SIGHUP)
+> sudo vi setup.web.sh
+> sudo chmod +x setup.web.sh
+> ./setup.web.sh
+Try in browser:http://172.20.20.23:8080/ip.html
+> dig @localhost -p 8600 web.service.consul SRV
+
+
+Maintenance Mode:
+> consul maint -enable -reason Because
+> consul maint
+> consul maint -disable
+> vagrant ssh web3
+> consul maint -enable
+> consul maint
+> dig @localhost -p 8600 web3.node.consul
+> dig @localhost -p 8600 web.service.consul
+> dig @localhost -p 8600 web.service.consul SRV
+> consul maint -disable
+> dig @localhost -p 8600 web.service.consul SRV
+
+
+Dynamic Lb Config:
+> vagrant ssh lb
+> chmod +x /vagrant/provision/setup.lb.sh
+> /vagrant/provision/setup.lb.sh
+> dig @localhost -p 8600 lb.service.consul SRV
+> docker stop haproxy
+> docker start haproxy
+Try in browser:http://172.20.20.11/ip.html
+> chmod +x  /vagrant/provision/install.consul-template.sh
+> $_
+> consul-template -h
+> consul-template -template /vagrant/provision/haproxy.ctmpl  -dry
+> consul-template -config /vagrant/provision/lb.consul-template.hcl
+> Try in browser:http://172.20.20.11/haproxy
+> killall -HUP consul-template
+> consul maint -http-addr=172.20.20.23:8500 -enable
+> consul maint -http-addr=172.20.20.23:8500 -disable
+
+KV:
+> curl http://localhost:8500/ui/dc1/kv/?recurse
+> curl -X PUT -d '50s' http://localhost:8500/v1/kv/prortal/haproxy/timeout-server?dc=dc1
+> curl -X DELETE http://localhost:8500/v1/kv/prod/portal/haproxy/timeout-server?dc=dc1
+> curl -X GET  http://localhost:8500/v1/kv/prod/portal/haproxy/timeout-server?dc=dc1?pretty
+> curl -X GET  http://localhost:8500/v1/kv/prod/portal/haproxy/timeout-server?dc=dc1'&'rawjq
+> curl http://localhost:8500/v1/kv/prod/portal/haproxy/stats?dc=dc1
+> curl -v http://localhost:8500/v1/kv/prod/portal/haproxy/stats?dc=dc1
+
+Blocking Queries:
+curl -v http://localhost:8500/v1/kv/prod/portal/haproxy/stats?dc=dc1'&'index=33274'&'wait=10s
