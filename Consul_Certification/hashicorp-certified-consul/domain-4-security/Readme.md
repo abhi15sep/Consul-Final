@@ -2,33 +2,30 @@
 
 The code mentioned in this document are used in the HashiCorp Certified Consul Associate 2020 video course.
 
-
 # Video-Document Mapper
 
-| Sr No | Document Link |
-| ------ | ------ |
-| 1 | [Implementing Consul Connect][PlDa] |
-| 2 | [Intentions and Precedence][PlDb] |
-| 2 | [Overview of Consul ACLs][PlDc] |
-| 3 | [Understanding ACL Rules][PlDd] |
-| 4 | [Anonymous Tokens][PlDe] |
-| 5 | [Enabling ACLs on Agent][PlDf] |
-| 6 | [Gossip Encryption in Consul][PlDg] |
-| 6 | [Gossip Encryption in Existing Datacenter][PlDh] |
-| 7 | [Rotating Gossip Encryption Keys][PlDi] |
-| 8 | [RPC Encryption with TLS][PlDj] |
-| 9 | [HTTP API in Consul][PlDk] |
+| Sr No | Document Link                                    |
+| ----- | ------------------------------------------------ |
+| 1     | [Implementing Consul Connect][plda]              |
+| 2     | [Intentions and Precedence][pldb]                |
+| 2     | [Overview of Consul ACLs][pldc]                  |
+| 3     | [Understanding ACL Rules][pldd]                  |
+| 4     | [Anonymous Tokens][plde]                         |
+| 5     | [Enabling ACLs on Agent][pldf]                   |
+| 6     | [Gossip Encryption in Consul][pldg]              |
+| 6     | [Gossip Encryption in Existing Datacenter][pldh] |
+| 7     | [Rotating Gossip Encryption Keys][pldi]          |
+| 8     | [RPC Encryption with TLS][pldj]                  |
+| 9     | [HTTP API in Consul][pldk]                       |
 
-
-
-[PlDa]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/connect.md>
-[PlDb]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/intentions.md>
-[PlDc]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/acl-bootstrap.md>
-[PlDd]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/acl-rules.md>
-[PlDe]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/anonymous.md>
-[PlDf]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/node-acl.md>
-[PlDg]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/gossip-encryption.md>
-[PlDh]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/gossip-existing-dc.md>
-[PlDi]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/rotate-gossip-keys.md>
-[PlDj]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/rpc-encryption.md>
-[PlDk]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security/http-api.md>
+[plda]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/connect.md
+[pldb]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/intentions.md
+[pldc]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/acl-bootstrap.md
+[pldd]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/acl-rules.md
+[plde]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/anonymous.md
+[pldf]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/node-acl.md
+[pldg]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/gossip-encryption.md
+[pldh]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/gossip-existing-dc.md
+[pldi]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/rotate-gossip-keys.md
+[pldj]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/rpc-encryption.md
+[pldk]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security/http-api.md

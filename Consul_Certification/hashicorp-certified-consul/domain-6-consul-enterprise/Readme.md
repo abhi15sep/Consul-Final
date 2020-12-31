@@ -2,20 +2,16 @@
 
 The code mentioned in this document are used in the HashiCorp Certified Consul Associate 2020 video course.
 
-
 # Video-Document Mapper
 
-| Sr No | Document Link |
-| ------ | ------ |
-| 1 | [Overview of Consul Enterprise][PlDa] |
-| 2 | [Implementing Namespaces][PlDb] |
-| 3 | [Automated Backups in Enterprise][PlDc] |
-| 4 | [Implementing Fault Tolerance with Redundancy Zones][PlDd] |
+| Sr No | Document Link                                              |
+| ----- | ---------------------------------------------------------- |
+| 1     | [Overview of Consul Enterprise][plda]                      |
+| 2     | [Implementing Namespaces][pldb]                            |
+| 3     | [Automated Backups in Enterprise][pldc]                    |
+| 4     | [Implementing Fault Tolerance with Redundancy Zones][pldd] |
 
-
-
-
-[PlDa]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-6-consul-enterprise/enterprise-install.md>
-[PlDb]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-6-consul-enterprise/namespace-usecase.md>
-[PlDc]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-6-consul-enterprise/snapshot-agent.md>
-[PlDd]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-6-consul-enterprise/redundancy.md>
+[plda]: /domain-6-consul-enterprise/enterprise-install.md
+[pldb]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-6-consul-enterprise/namespace-usecase.md
+[pldc]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-6-consul-enterprise/snapshot-agent.md
+[pldd]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-6-consul-enterprise/redundancy.md
