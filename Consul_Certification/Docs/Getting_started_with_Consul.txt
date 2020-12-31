@@ -1,0 +1,80 @@
+Overview of Consul:
+===================
+Consul is a service mesh solution providing a full-featured control plane with service discovery,
+configuration, and segmentation functionality.
+a) service discovery - Service Discovery is the way in which microservices can locate each other on the network.
+b) KV Store - Consul with health check functionality will only keep the healthy instances related data within its
+database.
+c) Health Checking - Key-Value store is generally used for storing the service configuration and other meta-data.
+d) Secure service Communication - Sidecar proxies can be used to automatically establish TLS connections for inbound and
+outbound connections.
+
+Start Consul in Dev Mode:
+=========================
+consul agent -dev -client=0.0.0.0
+Important Note:
+Make sure to allow only your IP to connect to the server in Firewall.
+
+a) The Dev agent mode in Consul is useful for local development, testing, and exploration.
+b) Not very secure.
+c) In-memory mode
+
+Consul Architecture:
+====================
+There are two primary components:
+
+Consul Server - Consul Server is primarily responsible for maintaining the cluster state, as well as responding to queries received from clients.
+Consul Client - The client is primarily responsible for making requests to the server and are also used for performing health check.
+
+Overview of Consul Agent:
+=======================
+An agent is a long-running daemon on every member of the Consul cluster.
+The agent is able to run in either client or server mode.
+Since all nodes must be running an agent, it is simpler to refer to the node as being either a client or server
+
+Consul Datacenter:
+=================
+A datacenter is a networking environment that is private, low latency, and high bandwidth.
+This excludes communication that would traverse the public internet.
+Multiple Availability Zone within a single AWS region would be considered part of a single datacenter.
+
+To see the list of members of consul clusters:
+consul members
+
+Joining Consul Clients:
+=======================
+To join clients to consul cluster, the following command needs to be used:
+consul agent -join 1.2.3.4 -bind 5.6.7.8 -data-dir /path/dir
+where:
+-join 1.2.3.4 - (Server) Address of another agent to join upon starting up.
+-bind 5.6.7.8 - (Client) This is an IP address that should be reachable by all other nodes in the cluster.
+-data-dir /path/dir - This is required for all agents. The directory should be durable across reboots.All used for storing cluster state.
+
+Pre-Requisite: Consul Server should be up and running with following syntax
+consul agent -dev -client=0.0.0.0 -bind [SERVER-IP]
+
+Client:
+consul agent -join [SERVER-IP] -bind [CLIENT-IP] -data-dir [PATH-TO-FOLDER]
+Example:
+consul agent -join 134.209.155.89 -bind 165.22.222.190 -data-dir /root/consul
+
+Remote Execution Functionality:
+============================== 
+Remote Execution can be used to run a certain set of commands to perform the desired action.
+
+The feature of remote execution is achieved with the ​ consul exec​ command.
+consul exec ping google.com
+
+Important Note:
+Remote Execution is disabled by default.
+You will need to explicitly enable it at the node level to make use of it.
+Following is the command to Enable Remote Execution:
+consul agent -hcl 'disable_remote_exec=false'
+
+Example:
+Step 1 Run following command in consul-01 (Agent in Dev Server Mode):
+consul agent -dev -client=0.0.0.0 -bind [SERVER-IP] -hcl 'disable_remote_exec=false'
+Step 2: Run following command in consul-02 (Client)
+consul agent -join [DEV-AGENT-IP] -bind [CURRENT-NODE-IP] -data-dir /root/consul -hcl 'disable_remote_exec=false'
+Step 3: Verification:
+consul exec ping -c1 google.com
