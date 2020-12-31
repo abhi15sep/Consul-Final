@@ -1,24 +1,17 @@
 # HashiCorp Certified Consul Associate 2020
 
-This is a central document which contains all the commands and code files used throughout the video course.
+| Domain | Document Link                              |
+| ------ | ------------------------------------------ |
+| 1      | [Getting Started with Consul][plda]        |
+| 2      | [Service Discovery][pldb]                  |
+| 3      | [Dynamic Application Configuration][pldc]  |
+| 4      | [Security][plde]                           |
+| 5      | [Infrastructure & High-Availability][pldf] |
+| 6      | [Consul Enterprise][pldg]                  |
 
-https://www.udemy.com/course/hashicorp-certified-consul-associate/?couponCode=AWESOME-CONSUL
-
-# Video-Document Mapper
-
-| Domain | Document Link |
-| ------ | ------ |
-| 1 | [Getting Started with Consul][PlDa] |
-| 2 | [Service Discovery][PlDb] |
-| 3 | [Dynamic Application Configuration][PlDc]
-| 4 | [Security][PlDe] |
-| 5 | [Infrastructure & High-Availability][PlDf] |
-| 6 | [Consul Enterprise][PlDg] |
-
-
-   [PlDa]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-1-getting-started>
-   [PlDb]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-2-service-discovery>
-   [PlDc]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-3-dynamic-app-configs>
-   [PlDe]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-4-security>
-   [PlDf]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-5-high-availability>
-   [PlDg]: <https://github.com/zealvora/hashicorp-certified-consul/blob/main/domain-6-consul-enterprise>
+[plda]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-1-getting-started
+[pldb]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-2-service-discovery
+[pldc]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-3-dynamic-app-configs
+[plde]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-4-security
+[pldf]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-5-high-availability
+[pldg]: https://github.com/abhi15sep/Consul-Final/tree/master/Consul_Certification/hashicorp-certified-consul/domain-6-consul-enterprise
