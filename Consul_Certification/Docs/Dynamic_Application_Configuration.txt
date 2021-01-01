@@ -1,0 +1,120 @@
+Overview of the Key-Value Store:
+================================
+Consul's simple key/value store, useful for storing service configuration or other metadata.
+
+Important Pointers for KV Store:
+The KV store can be accessed by the consul kv CLI subcommands, HTTP API, and Consul UI.
+Objects are opaque to Consul, meaning there are no restrictions on the type of object stored in a key/value entry. The main restriction on an object is size - the maximum is 512 KB.
+
+Example:
+Store & Retreive Data in KV:
+consul kv put max_memory 512M
+consul kv get max_memory
+
+List all the keys in the store using the recurse:
+consul kv get -recurse
+
+Updating Existing Values:
+consul kv put max_memory 1024M
+consul kv get max_memory
+
+Deleting Keys:
+consul kv delete max_memory
+
+Understanding Watches Functionality:
+====================================
+Watches feature in Consul checks for changes made to the Consul key-value store.
+When an update is detected, an external handler is invoked.
+
+Watch functionality can watch for a wide variety of resources, these include:
+a) key
+b) keyprefix
+c) services
+d) nodes
+e) checks
+f) events
+
+Examples:
+Basic Watch Command:
+consul watch -type=key -key=max_memory
+
+Invoking an Handler:
+mkdir /root/tmp-consul
+cd /root/tmp-consul
+
+nano myscript.sh
+
+#!/usr/bin/env sh
+while read watch
+do
+    echo $watch
+done
+
+chmod +x myscript.sh
+consul watch -type=key -key=max_memory ./myscript.sh
+echo MTAyNE1C | base64 -d
+
+Checks Critical Checks:
+consul watch -type checks -state critical
+
+Consul Template:
+=================
+Consul Template queries a Consul instance and updates any number of specified templates on the filesystem.
+
+Example:
+Documentation:
+https://releases.hashicorp.com/consul-template/
+
+Installation Steps :
+mkdir /root/template
+cd /root/template
+yum -y install wget
+wget https://releases.hashicorp.com/consul-template/0.25.1/consul-template_0.25.1_linux_amd64.tgz
+tar -xzvf consul-template_0.25.1_linux_amd64.tgz
+mv consul-template /usr/local/bin
+rm -f consul-template_0.25.1_linux_amd64.tgz
+
+Example 1:
+nano course.tpl
+
+{{ key "course" }}
+
+consul-template -template "course.tpl:course_name.txt"
+consul-template -template "course.tpl:course_name.txt" -once
+
+Configuration File:
+consul {
+ address = "127.0.0.1:8500"
+}
+template {
+ source = "/root/template/course.tpl"
+ destination = "/root/template/course-newname.txt"
+ command = "echo Modified > /root/template/delta.txt"
+}
+
+consul-template -config "/root/template/template.hcl"
+
+
+envconsul:
+==========
+Envconsul provides a convenient way to launch a subprocess with environment variables populated from HashiCorp Consul and Vault.
+
+Documentation Referred:
+https://github.com/hashicorp/envconsul
+
+Pre-Requisite:
+yum -y install golang git make
+
+Compile:
+git clone https://github.com/hashicorp/envconsul.git
+cd envconsul
+make dev
+cp /root/go/bin/envconul /usr/local/bin
+
+Write Data to KV Store:
+consul kv put my-app/address 1.2.3.4
+consul kv put my-app/port 80
+consul kv put my-app/max_conns 5
+
+Run envconsul:
+envconsul -prefix my-app env
