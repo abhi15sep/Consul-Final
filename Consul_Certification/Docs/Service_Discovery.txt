@@ -1,0 +1,111 @@
+Consul for service discovery:
+============================
+With the consul service discovery feature, there is a registry that is maintained.
+This registry contains all the information about other services.
+> dig @localhost -p 8600 messaging-service.service.consul SRV
+
+Implementing Service Discovery:
+==============================
+With the Consul service discovery feature, there is a registry that is maintained.
+This registry contains all the information about other services.
+
+Areas to Service Discovery:
+There are three key areas in the overall service discovery process:
+1) Registering a service
+2) Finding services
+3) Monitoring services.
+
+We need to get all these areas right for a perfect service discovery feature.
+
+Step 1: Registering A Service:
+One of the main goals of service discovery is to provide a catalog of available services.
+We have to write a simple service definition file to declare the availability of a service.
+Consul Agent will forward the information to the Server.
+
+After you have written a service definition file, consul agent will communicate with the cluster so
+that the service is registered.
+
+Step 2: Finding Services:
+One of the primary query interfaces for Consul is DNS.
+dig @localhost -p 8600 messaging-service.service.consul SRV
+
+Example:
+Pre-Requisite: A running Consul Server and Consul Client.
+
+Step 1: Create Service Definiton
+cd /etc/conusl.d/
+nano web.json
+{
+  "service": {
+    "name": "web",
+    "port": 80
+  }
+}
+chown consul.consul web.json
+consul validate /etc/consul.d
+consul reload
+
+Step 2: Finding a service via DNS:
+yum -y install bind-utils
+dig @SERVER-IP -p 8600 web.service.consul
+dig @SERVER-IP -p 8600 web.service.consul SRV
+
+Service Health Checks:
+======================
+One of the primary roles of the agent is the management of system-level and application-level
+health checks.
+A health check is considered to be application-level if it is associated with a service.
+
+Health Check Types:          Description
+Script + Interval            These checks depends on invoking an external application that performs the check, exits with an appropriate exit code, and potentially generates some output.
+HTTP + Interval              These checks make an HTTP GET request to the specified URL, waiting the specified interval amount of time between requests. The status of the service depends on the HTTP response code: any 2XX code is considered passing.
+TCP + Interval               These checks make an TCP connection attempt to the specified IP/hostname and port, waiting interval amount of time between attempts.
+
+1. Script Checks:
+A check script is generally free to do anything to determine the status of the check.
+The only limitations placed are that the exit codes must obey this convention:
+a) 0 - Check is passing
+b) 1 - Check is warning
+c) Any other code - Check is failing.
+
+Important Pointer - Service Health Checks:
+Consul will only return hosts that are healthy.
+ 
+Example:
+
+Documentation Referred:
+https://www.consul.io/docs/discovery/checks
+
+Step 1: Enabling Service Health Checks:
+{
+  "service": {
+    "name": "web",
+    "port": 80,
+    "check": {
+    "args": [
+        "curl",
+        "127.0.0.1"
+      ],
+      "interval": "10s"
+    }
+  }
+}
+consul validate /etc/consul.d
+consul reload
+
+
+Step 2: Enable Local Script Checks:
+nano /etc/consul.d/consul.hcl
+enable_local_script_checks = true
+systemctl restart consul
+
+Step 3: Enable your application:
+yum -y install nginx
+systemctl start nginx
+netstat -ntlp
+
+Step 4: Health Check Verification
+yum -y install bind-utils
+dig @CONSUL-SERVER-IP -p 8600 web.service.consul
+systemctl stop nginx
+dig @CONSUL-SERVER-IP -p 8600 web.service.consul
