@@ -78,3 +78,131 @@ Step 2: Run following command in consul-02 (Client)
 consul agent -join [DEV-AGENT-IP] -bind [CURRENT-NODE-IP] -data-dir /root/consul -hcl 'disable_remote_exec=false'
 Step 3: Verification:
 consul exec ping -c1 google.com
+
+Configuration Directory:
+========================
+Running Consul from CLI with multiple command-line options is not a very scalable and efficient
+way of doing things.
+consul agent -join 134.209.155.89 -bind 165.22.222.190 -data-dir /root/consul -hcl 'disable_remote_exec=false'
+
+Using a Configuration Directory Approach:
+The agent has various configuration options that can be specified via the command-line or via
+configuration files.Configuration can either be in JSON or HCL format.
+
+Documentation Referred:
+https://www.consul.io/docs/agent/options.html#_join
+
+Custom Configuration Directory:
+mkdir /root/consul-new-config
+cd /root/consul-new-config
+yum -y install nano
+nano consul.hcl
+
+data_dir =  "/root/consul"
+start_join = ["SERVER-IP-HERE"]
+bind_addr = "CLIENT-IP-HERE"
+
+Start the Agent:
+consul agent -config-dir=/root/consul-new-config/
+
+Important Note - Configuration Directory:
+The CLI and Configuration File options are not always named the same.
+
+CLI Command:      Configuration File:
+join                start_join
+bind                bind_addr
+data-dir            data_dir
+
+
+Leave Behavior for Agents:
+==========================
+Whenever we go somewhere, we generally inform parents/spouse about it.
+If you do not inform, be prepared to sit on the couch for an hour or two listening to what could
+have been improved.
+
+There are two primary leave behavior for an agent in Consul:
+a) Graceful Exit: It is used to ensure other nodes see the agent as "left" instead of "failed". When gracefully exiting, the agent first notifies the cluster it intends to leave the cluster.
+b) Force removal: When server simpily fails (power/network cut). Datacenter will detect the failure and replication will contineously retry.
+
+To gracefully halt an agent, send the process an interrupt signal (usually Ctrl-C from a terminal
+or running ​ killall -s 2 consul
+
+Forceful removal can be achieved by sending SIGKILL signal
+killall -s 9 consul
+
+Example:
+Start Consul Agent in DEV Mode (consul-01):
+consul agent -dev -client=0.0.0.0 -bind=134.209.155.89
+
+Start Consul Agent in Client Mode (consul-02)
+consul agent -join 134.209.155.89 -bind 165.22.222.190 -data-dir /root/consul
+
+To forcefully exit:
+killall -s 9 consul
+
+To gracefully exit:
+killall -s 2 consul
+
+Consul Server Mode:
+===================
+Running consul in server mode (non-dev) allows customers to have flexibility related to the
+option sets that can be used.
+
+Flags:                Description:
+server                 Providing this flag specifies that you want the agent to start in server mode.
+-bootstrap-expect      This tells the Consul server how many servers the datacenter should have in total.
+-node                  Each node in a datacenter must have a unique name. By default, Consul uses the hostname of the machine, but you'll manually override it, and set it to agent-one.
+-bind and -data-dir    Address agent will listen and storing state data.
+config-dir             This flag tells consul where to look for its configuration. Standard location is /etc/consul.d
+
+Example:
+Start Consul in Server Mode
+consul agent -server -bootstrap-expect=1 -node=consul-server -bind=[SERVER-IP] -data-dir=/tmp/consul -client=0.0.0.0 -ui=true
+
+Making use of Configuration Directory
+data_dir =  "/root/consul"
+bind_addr = "SERVER-IP"
+client_addr = "0.0.0.0"
+bootstrap_expect = 1
+node_name = "consul-server"
+ui = true
+server = true
+
+Start Consul Agent
+consul agent --config-dir /root/consul-server-config/
+
+Systemd and Consul:
+==================
+Overview of Challenges:
+As of now, we have been deploying Consul either via CLI flags or via Configuration Directory.
+Although this is a good approach for an initial start, but for production, it is not an ideal
+approach.
+
+Systemd Based Approach:
+Systemd provides a system and service manager that runs as PID 1 and starts the rest of the
+system.You can specify a service file with all the configuration and settings and systemd will manage
+the consul process accordingly.
+
+Example:
+Backing up the default consul config:
+cd /etc/consul.d
+mv consul.hcl consul.hcl.bak
+
+Add new consul configuration:
+nano consul.hcl
+
+start_join = ["SERVER-IP"]
+bind_addr = "CURRENT-NODE-IP"
+data_dir = "/etc/consul.d/consul-dir"
+chown consul.consul consul.hcl
+
+Verification Stage:
+systemctl start consul
+systemctl status consul
+systemctl enable consul
+reboot
+systemctl status consul
+
+To check the logs:
+journalctl -u consul
+
