@@ -145,3 +145,195 @@ consul intention match backend-service
 Sidecar proxy Support in Consul:
 ================================
 Consul includes its own built-in layer4 (L4) proxy for testing and development but also offers first class support for Envoy as sidecar proxy.
+
+
+Consul ACLs:
+============
+One of the biggest challenges as of now in Consul is the lack of Authentication.
+To overcome this, Consul uses Access Control Lists (ACLs) to secure access to the UI, API, CLI, service communications, and agent communications.
+
+Step 1: Enable ACL in Consul:
+To enable ACLs, add the following ACL parameters to the agent's configuration file and then restart the Consul service.
+
+acl = {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+}
+
+Step 2: Create a Bootstrap Token
+It is important to have one token with unrestricted privileges in case of emergencies.
+This will also allow you to quickly get started.
+consul acl bootstrap
+
+Important Note:
+Using the token on the command line with the -token flag is not recommended, instead, you can
+set it as an environment variable once.
+CONSUL_HTTP_TOKEN
+
+Example:
+Step 1: Enabling ACLs
+cd /etc/consul.d
+
+nano agent.hcl
+
+acl = {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+}
+
+Step 2: Create Bootstrap Token
+consul acl bootstrap
+
+Approach 1: Using Tokens with CLI Command
+consul members -token "TOKEN-HERE"
+
+Approach 2: Using Environement Variables
+export CONSUL_HTTP_TOKEN=3a2c3d17-a6db-03db-a89b-15419aab68b1
+
+ACL System in Consul:
+=====================
+The ACL is Capability-based, relying on tokens that are associated with policies to determine which fine-grained rules can be applied.
+There are two primary components of the ACL system: ACL Policies & ACL Tokens
+
+Developer ACL Policy                 ------------------> Token1
+Allow write access to front-end service.
+Allow read access to KV store.
+
+Overview of Rules:
+Rules are composed of a resource, a segment (for some resource areas), and a policy disposition.
+
+<resource> "<segment>" {
+    policy = "<policy disposition>"
+}
+
+key_prefix "mobiles/" {                 ------------------> write access on key-value store
+  policy = "write"
+}
+
+Actions for Rule:
+Action             Description
+read               allow the resource to be read but not modified.
+write              allow the resource to be read and modified.
+deny               do not allow the resource to be read and modified.
+list               allow access to all the keys under a segment in the consul KV
+
+Scope for ACL Rules
+Following resources are available for constructing rules:
+Resource             Description
+acl                  Operations for managing the acl system ACL API
+agent                Utility Operations in the agent API, other than service and check registration
+event                Listing and firing events in the Events API
+key                  Key/Value store Operations in the KV store API
+keyring              Keyring Operations in the Keyring API
+node                 Node-level catalog operations in the Catalog API, Health API, Prepared query API, Network Coordinate API, and Agent API.
+operator             Cluster-level catalog operations in the operator API, other than keyring API
+etc                  Includes query, service and session.
+
+Example:
+Documentation:
+https://www.consul.io/docs/security/acl/acl-rules
+
+Step 1: Writing Demo Policies:
+key_prefix "mobiles/" {
+  policy = "read"
+}
+
+Step 2: Add an Explict Deny:
+key_prefix "mobiles/samsung" {
+  policy = "deny"
+}
+
+Step 3: Wildcard based access
+key_prefix "" {
+  policy = "read"
+}
+
+Understanding ACL Roles:
+=======================
+Roles allow for the grouping of a set of policies into a reusable higher-level entity that can be applied to many tokens. 
+
+Anonymous Tokens:
+=================
+The anonymous token is used when a request is made to Consul without specifying a bearer token.
+The anonymous token's description and policies may be updated but Consul will prevent this token's deletion.
+
+Example:
+service_prefix "" {
+  policy = "read"
+}
+key_prefix "" {
+  policy = "read"
+}
+node_prefix "" {
+  policy = "read"
+}
+
+Enabling ACLs on Agent:
+======================
+When you enable ACLs with a “deny” based approach, by default requests will be denied.
+This applies even at the agent level.
+
+Step 1: Create Policy for Agent Token
+Create the following policy for agent token
+node_prefix "" {
+  policy = "write"
+}
+service_prefix "" {
+   policy = "read"
+}
+
+Step 2: Add token in Configuration
+Add the agent token within the configuration
+acl = {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+  tokens {
+    "agent" = "f1f30bb8-af83-ac3e-8944-efe03d782ac6"
+  }
+}
+
+
+Example:
+Documentation Referred:
+https://www.consul.io/docs/security/acl/acl-system
+
+Step 1: Create following policy
+node_prefix "" {
+  policy = "write"
+}
+service_prefix "" {
+   policy = "read"
+}
+
+Step 2: Add token within configuration file:
+acl = {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+  tokens {
+    "agent" = "f1f30bb8-af83-ac3e-8944-efe03d782ac6"
+  }
+}
+
+Step 3: Verification:
+systemctl restart consul
+journalctl -u consul
+
+Step 4: DNS Check:
+dig @localhost -p 8600 consul.service.consul
+
+Anonymous Policy:
+node_prefix "" {
+  policy = "read"
+}
+service_prefix "" {
+  policy = "read"
+}
+query_prefix "" {
+  policy = "read"
+}
+
+dig @localhost -p 8600 consul.service.consul
