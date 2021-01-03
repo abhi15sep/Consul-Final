@@ -337,3 +337,266 @@ query_prefix "" {
 }
 
 dig @localhost -p 8600 consul.service.consul
+
+
+Overview of Gossip Protocol:
+============================
+Overview of Unicast and MultiCast:
+A Unicast transmission/stream sends IP packets to a single recipient on a network.
+Multicast transmission sends IP packets to a group of hosts on a network.
+
+Multi-Cast Challenges:
+Suppose a sender wants to send a message to a group of hosts. The hosts might not receive the message due to various issues like network connectivity, the host being down, and so on.
+It can also be possible that the sender of the message went down.
+
+Gossip Protocol:
+Data is periodically transmitted to random targets. In the below case, the sender has sent the message to R1.
+S -----> R1(infected by the gossip)
+Once R1 receives the message, it is referred to as infected by the gossip.
+Once R1 receives the message, it chooses random targets and sends out copies of the message.
+S -----> R1 -----> R2
+In the final stage, all the hosts will have the data.
+S -----> R1 -----> R2 -----> R3 ------> R4
+
+Understanding Gossip Protocol:
+A gossip protocol is a procedure or process of computer peer-to-peer communication.
+The amount of overhead involved is not that high when compared to a non-gossip scenario.
+Some ad-hoc networks have no central registry and the only way to spread common data is to rely on each member to pass it along to their neighbors.
+
+
+Gossip Encryption in Consul:
+============================ 
+Consul and Gossip Protocol:
+Consul uses a gossip protocol to manage membership and broadcast messages to the cluster
+
+Challenge with Plain Text Data:
+By default, the data would be in plaintext and it is possible to capture the network packets and retrieve the information.
+
+Enabling Encryption:
+As part of security, it is important to enable gossip encryption.
+Two steps:
+1) Generate a cryptographic key.
+2) Add key within the configuration file.
+
+Step 1: Generate Cryptographic Key
+We can easily generate a key with the consul keygen command.
+> consul keygen
+
+Step 2: Add Key in Configuration File
+Add the encryption key parameter to the agent configuration file.
+> cd /etc/consul.d
+> nano consul.hcl
+data_dir = "/etc/consul.d/consul-dir"
+bind_addr = "159.65.145.160"
+client_addr = "0.0.0.0"
+bootstrap_expect = 1
+node_name = "consul-server"
+ui = true
+server = true
+encrypt = "KEY-HERE"
+
+Configuring Gossip for Existing Datacenter:
+Gossip encryption can also be enabled on existing data centers but requires several extra steps.
+The additional configuration of the agent configuration parameters, encrypt_verify_incoming and encrypt_verify_outgoing is necessary
+data_dir = "/etc/consul.d/consul-dir"
+bind_addr = "159.65.145.160"
+client_addr = "0.0.0.0"
+bootstrap_expect = 1
+node_name = "consul-server"
+ui = true
+server = true
+encrypt = "KEY-HERE"
+encrypt_verify_incoming = true
+encrypt_verify_outgoing = true
+
+Important Note:
+TCP and UDP protocol can be used for Gossip.
+Port Number: 8301
+
+Example:
+Step 1: Generate Cryptographic Key:
+consul keygen
+
+Step 2: Add appropriate paremeter within configuration
+
+Approach 1 (DEV Agent Mode):
+systemctl stop consul
+consul agent -dev -client=0.0.0.0 -bind 134.209.155.89 -encrypt [KEY-HERE]
+consul agent -bind 165.22.222.190 -join 134.209.155.89  -data-dir /root/consul -encrypt [KEY-HERE]
+
+Approach 2 (Configuration File) - Run both on server and client :
+cd /etc/consul.d
+nano consul.hcl
+encrypt = "KEY-HERE"
+
+Step 3: Start & Verify Agent
+systemctl start consul
+
+Miscellenous Commands:
+yum -y install tcpdump
+tcpdump -i any port 8301
+tcpdump -i any port 8301 -vv -X
+
+Gossip encryption in existing DC:
+=================================
+Gossip encryption can also be enabled on existing data centers but requires several extra steps.
+The additional configuration of the agent configuration parameters, encrypt_verify_incoming and encrypt_verify_outgoing is necessary
+Step1: Generate the keygen
+Step2: Set encrypt_verify_incoming and encrypt_verify_outgoing to false and restart.
+Step3: Set encrypt_verify_outgoing to true and restart.
+Step4: Set encrypt_verify_incoming to true and restart.
+
+Configuration parameter:
+
+1. Agents will be able to decrypt gossip but will not yet be able to send encrypted traffic.
+encrypt = "ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE=",
+encrypt_verify_incoming = false,
+encrypt_verify_outgoing = false
+
+2. The agents will now be sending encrypted gossip but will still allow incoming unencrypted traffic.
+encrypt = "ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE=",
+encrypt_verify_incoming = false,
+encrypt_verify_outgoing = true
+
+3. All the agents will now be strictly enforcing encrypted gossip. 
+encrypt = "ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE=",
+encrypt_verify_incoming = true,
+encrypt_verify_outgoing = true
+
+Example:
+
+consul-server:
+data_dir =  "/etc/consul.d/consul-dir"
+client_addr = "0.0.0.0"
+bind_addr   = "159.65.145.160"
+bootstrap_expect = 1
+node_name = "consul-server"
+ui = true
+server = true
+
+consul-client:
+cat consul.hcl
+
+data_dir =  "/etc/consul.d/consul-dir"
+bind_addr = "134.209.154.246"
+node_name = "consul-02"
+start_join = ["159.65.145.160"]
+enable_local_script_checks = true
+
+Service Definition:
+cat web.hcl
+
+{
+  "service": {
+    "name": "web",
+    "port": 80,
+    "check": {
+    "args": [
+        "curl",
+        "127.0.0.1"
+      ],
+      "interval": "10s"
+    }
+  }
+}
+Make sure nginx is running or you can disable script checks .
+
+Our sample key:
+ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE= OR consul keygen
+
+Step 1: Set both flags to false
+encrypt = "ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE=",
+encrypt_verify_incoming = false,
+encrypt_verify_outgoing = false
+
+systemctl restart consul
+
+Step 2: Set outgoing to true
+encrypt = "ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE=",
+encrypt_verify_incoming = false,
+encrypt_verify_outgoing = true
+
+systemctl restart consul
+
+Step 3: Set incoming to true
+encrypt = "ER5awGvrbkd25fO67Q4SktzZwSwR/F2SFQMExXmFlUE=",
+encrypt_verify_incoming = true,
+encrypt_verify_outgoing = true
+systemctl restart consul
+
+
+Rotating gossip keys:
+====================
+As part of compliance and security best practices, its important to regularly rotate the encryption keys.
+
+Rotating gossip encryption keys:
+The consul keyring command is used to examine and modify the encryption keys used in Consul's gossip pool.
+It is capable of distributing new encryption keys to the agents, retiring old encryption keys, and changing the keys used by the agents to encrypt message.
+> consul keyring -list (List current set of keys)
+
+There are 4 primary steps for the entire process of gossip key rotation:
+1. Genrate a new encryption key.
+2. Add new key to the keyring.
+3. Promote new key to primary.
+4. Remove old key from the keyring.
+
+Important Pointers:
+The encrypt parameter is needed only at join time and after that the agent will persist whatever data it needs in the local keyring.
+If you later remove the encrypt parameter from the configuration file, it will not have an impact.
+
+Example:
+List current set of keys
+consul keyring -list
+
+Generate new encryption key
+consul keygen
+
+Add new key to the keyring
+consul keyring -install [NEW-CONSUL-KEY]
+
+Verify if new key is installed
+consul keyring -list
+
+Promote new key to primary
+consul keyring -use NEW-KEY
+
+Remove Older key
+consul keyring -remove [OLD-KEY]
+
+
+Introduction to Asymmetric Key Encryption:
+==========================================
+Asymmetric cryptography uses public and private keys to encrypt and decrypt data.
+
+One key in the pair can be shared with everyone; it is called the public key. The other key in the pair is kept secret; it is called the private key.
+
+Either of the keys can be used to encrypt a message; the oppo
+
+Use-Case of Asymmetric Key Encryption:
+Step 1
+User zeal wants to log in to the server. Since the server uses a public key authentication,
+instead of taking the password from the user, the server will verify if the User claiming to be zeal
+actually holds the right private key.
+
+Step 2
+The server creates a simple challenge, 2+3=? and encrypts this challenge with the Public Key of
+the User and sends it back to the User. The challenge is sent in an encrypted format.
+
+Step 3:
+Since the user zeal holds the associated private key, he will be able to decrypt the message and
+compute the answer, which would be 5. Then, he will encrypt the message with the private key
+and send it back to the server.
+
+Step 4:
+The server decrypts the message with the user's Public Key and checks if the answer is correct.
+If yes, then the server will send an Authentication Successful message and the user will be able
+to log in.
+
+Protocols:
+Because of the advantage that it offers, Asymmetric key encryption is used by a variety of
+protocols.Some of these include:
+PGP
+SSH
+Bitcoin
+TLS
+S/MIME
