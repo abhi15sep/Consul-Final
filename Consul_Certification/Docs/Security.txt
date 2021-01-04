@@ -600,3 +600,147 @@ SSH
 Bitcoin
 TLS
 S/MIME
+
+RPC Encryption with TLS:
+========================
+Consul & RPC:
+Consul Client and Server communicate over RPC on port 8300.
+
+Challenges with Plain Text Data:
+By default, the data would be in plaintext and it is possible to capture the network packets and retrieve the information.
+
+Enabling Encryption:
+As part of security, it is important to enable RPC encryption.
+Three steps:
+Initialize In-Built CA
+Create Server Certificates.
+Configure Servers and Clients.
+
+Certificate Authority:
+Certificate Authority is an entity that issues digital certificates.
+The key part is that both the receiver and the sender trusts the CA.
+
+Overview Steps Involved:
+Step 1: Initialize Built-In CA
+You can use the in-built CA provided by the Consul or make use of 3rd party private CAs.
+> consul tls ca create
+
+Step 2: Create Server Certificates
+You can create the server certificates easily using in-built CA.
+> consul tls cert create -server
+
+Step 3: Configure Server & Clients
+Add appropriate configuration parameters within the configuration file to make use of certificates.
+> See steps 3, 4 and 5 in example section.
+
+Methods for Distributing Certificates:
+There are two methods for distributing client certificates: operator and auto encryption
+1) With auto-encryption, you can configure the Consul servers to automatically distribute certificates to the clients.
+2) The operator method is recommended if you need to use a third-party CA
+
+Example:
+Step 1: Initialize Built-In CA
+consul tls ca create
+
+Step 2: Create Server Certificates:
+consul tls cert create -server
+
+Step 3: Copy the CA Certificate to client
+base64 -i consul-agent-ca.pem (server)
+cd /tmp (client)
+nano tmp.txt (Paste the base64 encoded and save)
+cat tmp.txt | base64 -d > /etc/consul.d/consul-agent-ca.pem
+
+Step 4: Configure Server Configuration:
+cd /etc/consul.d
+nano consul.hc
+
+verify_incoming = true,
+verify_outgoing = true,
+verify_server_hostname = true,
+ca_file = "/etc/consul.d/consul-agent-ca.pem",
+cert_file = "/etc/consul.d/dc1-server-consul-0.pem",
+key_file = "/etc/consul.d/dc1-server-consul-0-key.pem",
+auto_encrypt {
+  allow_tls = true
+}
+
+chown -R consul.consul .
+systemctl start consul
+
+Step 5: Configure Client Configuration:
+cd /etc/consul.d
+nano consul.hc
+
+verify_incoming = false,
+verify_outgoing = true,
+verify_server_hostname = true,
+ca_file = "consul-agent-ca.pem",
+auto_encrypt = {
+  tls = true
+}
+
+chown -R consul.consul .
+systemctl start consul
+
+Step 6: Verfication:
+tcpdump -i any port 8300 -vv -X
+consul kv get sensitive-data
+
+Important TLS Configuration:
+============================
+While using the auto_encrypt method for RPC encryption use-case, we had added 3 parameters within the configuration file:
+
+verify_incoming = false:
+If set to "true", Consul requires that all incoming connections make use of TLS and that the client provides a Certificate signed by a Certificate Authority from the ca_file or ca_path.
+
+verify_outgoing = true:
+If set to "true", Consul requires that all outgoing connections from this agent make use of TLS and that the server provides a Certificate signed by a Certificate Authority from the ca_file or ca_path.
+
+verify_server_hostname = true:
+If set to "true", Consul verifies for all outgoing TLS connections that the TLS Certificate presented by the servers matches server.<datacenter>.<domain> hostname.
+
+
+Overview of Verify server hostname:
+In order to authenticate consul servers, servers are provided with a special certificate - one that contains server.dc1.consul in the Common Name and in the Subject Alternative Name.
+If you enable verify_server_hostname, only agent provides sucj certificate are allowed to boot as server.
+> openssl x509 -in dc1-server-consul-0.pem -noout -text
+This configuration is critical to prevent a compromised client from being restarted as server.
+
+Certificate Creation:
+The tls cert create command is used to create certificates for your Consul TLS setup.
+
+consul tls cert create -server - Generate server certificate
+consul tls cert create -client - Generate client certificate
+
+HTTP API in Consul:
+=================
+
+Overview of Consul Interface:
+There are multiple ways to connect with Consul:
+GUI, API as well as CLI
+
+HTTP API:
+The main interface to Consul is a RESTful HTTP API.
+All API routes are prefixed with /v1/
+
+Important Pointers:
+Depending on the resource on which operation needs to be performed, the endpoint changes.
+The API documentation provides extensive information about the same.
+By default, the output of all HTTP API requests is minimized JSON. If the client passes pretty on the query string, formatted JSON will be returned.
+
+Authentication:
+When authentication is enabled, a Consul token should be provided to API requests using the X-Consul-Token header or with the Bearer scheme in the authorization header.
+> curl --header "X-Consul-Token: <consul token>" http://127.0.0.1:8500/v1/agent/members
+> curl --header "Authorization: Bearer <consul token>" http://127.0.0.1:8500/v1/agent/members
+
+Example:
+
+Documentation Referred:
+https://www.consul.io/api-docs
+
+Commands and URLs:
+/v1/catalog/nodes
+/v1/catalog/nodes?pretty
+curl http://127.0.0.1:8500/v1/kv/course
+curl --request DELETE http://127.0.0.1:8500/v1/kv/course
