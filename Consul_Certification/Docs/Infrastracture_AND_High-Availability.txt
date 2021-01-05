@@ -1,0 +1,78 @@
+Implementing High-Availability in Consul:
+=========================================
+Understanding the Challenge:
+As of now, we have been making use of a single server and a client for our learning.
+If the server goes down, then all of your data will be inaccessible and requests would fail.
+
+Ideal Setup:
+In a production environment, you should have multiple sets of servers for high-availability.
+
+Overview of Bootstrap Expect:
+Bootstrap Expect flag informs Consul of the expected number of server nodes and automatically bootstraps when that many servers are available.
+If you have 3 servers that will be part of the cluster, bootstrap-expect should be 3.
+
+Examples:
+Server 1:
+consul agent -server=true -client=0.0.0.0 -bind [NODE-IP] -bootstrap-expect 3 -data-dir /tmp/consul
+
+Server 2:
+consul agent -server=true -client=0.0.0.0 -bind [NODE-IP]  -data-dir /tmp/consul
+consul join [FIRST-SERVER-IP]
+
+Server 3:
+consul agent -server=true -client=0.0.0.0 -bind [NODE-IP]  -data-dir /tmp/consul
+consul join [FIRST-SERVER-IP]
+
+Verification:
+consul members
+
+API Endpoint:
+http://SERVER-IP:8500/v1/status/leader
+
+Multiple Datacenter in Consul:
+==============================
+Revising Concept of Datacenter:
+A datacenter is a networking environment that is private, low latency, and high bandwidth.
+This excludes communication that would traverse the public internet.
+Multiple Availability Zone within a single AWS region would be considered part of a single datacenter.
+
+Multiple Datacenter approach:
+A large scale organization can be hosting their infrastructure across multiple cloud platforms
+and even on-premise.
+
+Important Pointers:
+All server nodes must be able to talk to each other. Otherwise, the gossip protocol as well as RPC forwarding will not work.
+In general, data is not replicated between different Consul datacenters. When a request is made for a resource in another datacenter, the local Consul servers forward an RPC request to the remote Consul servers for that resource and return the results.
+
+Example:
+
+Server 1:
+data_dir =  "/etc/consul.d/consul-dir"
+bind_addr = "134.209.155.89"
+client_addr = "0.0.0.0"
+bootstrap_expect = 1
+node_name = "consul-server"
+ui = true
+server = true
+datacenter = "India"
+
+Server 2:
+data_dir =  "/etc/consul.d/consul-dir"
+bind_addr = "165.22.222.190"
+client_addr = "0.0.0.0"
+bootstrap_expect = 1
+node_name = "consul-server-2"
+ui = true
+server = true
+datacenter = "Singapore"
+
+Join WAN:
+consul members -wan
+consul join -wan [SERVER-1-IP]
+consul catalog datacenters
+
+Verification:
+curl  http://127.0.0.1:8500/v1/kv/dc
+curl  http://127.0.0.1:8500/v1/kv/dc?dc=singapore
+
+echo U2luZ2Fwb3Jl | base64 -d
