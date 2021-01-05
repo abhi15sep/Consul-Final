@@ -76,3 +76,197 @@ curl  http://127.0.0.1:8500/v1/kv/dc
 curl  http://127.0.0.1:8500/v1/kv/dc?dc=singapore
 
 echo U2luZ2Fwb3Jl | base64 -d
+
+Overview of Prepared Query:
+============================ 
+Understanding Prepared Query:
+Prepared queries are objects that are defined at the datacenter level.
+Once created, prepared queries can then be invoked by applications to perform the query and get the latest results.
+
+Use Case 1 - Multiple Versions:
+Let’s assume there are multiple versions of AppA: v1 and v2
+Within the prepared query, we can explicitly specify a version that needs to be returned to the client.
+There are no configuration changes required at the client-side.
+
+Use Case 2 - Failover Policy:
+You can contact other data centers once there are no healthy instances in the local datacenter.
+
+Steps Involved in Failover Policy:
+Consul servers in the local datacenter will attempt to find healthy instances of the "AppA" service within the dc1
+If none are available locally, the Consul servers will make an RPC request to the Consul servers in "dc2" to perform the query there.
+Finally, an error will be returned if none of these datacenters had any instances available.
+
+> cat prepared-query.json
+{
+  "Name": "web-service",
+  "Service": {
+    "Service": "web",
+    "Tags": ["v2"]
+  }
+}
+
+> dig @localhost -p 8600 v1.web.service.consul SRV
+> dig @localhost -p 8600 v2.web.service.consul SRV
+> dig @localhost -p 8600 web-service.query.consul SRV (prepared query)
+
+
+> nano failover.json
+{
+  "Name": "failover",
+  "Service": {
+    "Service": "database",
+    "Tags": ["v1"],
+    "Failover": {
+      "Datacenters": ["singapore"]
+    }
+  }
+}
+> dig @localhost -p 8600 failover.query.consul SRV
+
+Examples (prepared-query-use-case-1):
+
+Documentation Referred:
+https://www.consul.io/api-docs/query
+
+Step 1: Create two services
+cd /etc/consul.d
+
+Service 1:
+nano web-1.json
+{
+  "service": {
+    "name": "web",
+     "id": "web1",
+    "port": 8080,
+    "tags": ["v1"]
+  }
+}
+
+Service 2:
+nano web-2.json
+{
+  "service": {
+    "name": "web",
+    "id":   "web2",
+    "port": 9080,
+    "tags": ["v2"]
+  }
+}
+
+consul reload
+
+Use-Case 1: Creating a basic prepared query:
+cd /tmp
+nano prepared-query.json
+
+{
+  "Name": "web-service",
+  "Service": {
+    "Service": "web",
+    "Tags": ["v2"]
+  }
+  
+curl --request POST --data @prepared-query.json http://127.0.0.1:8500/v1/query
+dig @localhost -p 8600 web-service.query.consul SRV
+
+List Prepared Query:
+curl http://127.0.0.1:8500/v1/query
+
+Update Prepared Query:
+curl --request PUT --data @prepared-query.json http://127.0.0.1:8500/v1/query/4de2cfbc-7c58-c4d4-8b39-ba39a7f765c8
+
+Deleted Prepared Query:
+curl --request DELETE http://127.0.0.1:8500/v1/query/:uuid
+
+
+Examples (Use-Case 2 Static Failover Policy):
+Singapore DC:
+
+cd /etc/consul.d
+nano db.json
+
+{
+  "service": {
+    "name": "database",
+    "port": 5080,
+    "tags": ["v1"]
+  }
+}
+
+consul reload
+
+India DC:
+
+cd /tmp
+nano failover.json
+
+{
+  "Name": "failover",
+  "Service": {
+    "Service": "database",
+    "Tags": ["v1"],
+    "Failover": {
+      "Datacenters": ["singapore"]
+    }
+  }
+}
+
+curl --request POST --data @failover.json http://127.0.0.1:8500/v1/query
+
+Verification:
+India DC:
+
+dig @localhost -p 8600 failover.query.consul SRV
+
+NearestN in prepared query specifies that the query will be forwarded to up to NearestN other datacenters based on their estimated network round trip time using Network Coordinates from the WAN gossip pool.
+
+Example Snippet:
+
+      "Service": {
+        "Service": "web",
+        "Failover": {
+          "NearestN": 3
+        }
+      }
+
+This will attempt to find a service locally, and otherwise, attempt to find that service in the next three closest datacenters.
+
+Backup & Restore:
+=================
+All servers write to the -data-dir before commit on write requests
+Consul provides the snapshot command that saves a point-in-time snapshot of the state of the Consul servers. 
+Some of the important data includes:
+a) Key-Value entries
+b) the service catalog
+c) prepared queries
+d) sessions
+e) ACLs
+
+Following commands can be used to take backup and restore data from backup.
+commands                               Description
+consul snapshot save backup.snap       Takes backup and stores it to backup.snap file
+consul snapshot restore backup.snap    Restore data from the backup
+
+Important Note:
+Snapshots will not be saved if the datacenter is degraded or if no leader is available.
+It is possible to run the snapshot on any non-leader server using stale consistency mode. This means that a very small number of recent writes may not be included.
+It is recommended to regularly take a backup in an automated way.
+
+Pre-Requisite:
+We had stored this data via GUI in demo. This is an equivalent command.
+consul kv put name backup1
+
+Step 1: Take a backup
+consul snapshot save backup.snap
+consul kv delete name
+
+Step 2: Restore From Backup
+consul snapshot restore backup.snap
+consul kv get name
+
+Overview of AutoPilot:
+======================
+Overview of AutoPilot Pattern:
+The autopilot pattern automates in code the repetitive and boring operational tasks of an
+application, including startup, shutdown, scaling, and recovery from anticipated failure
+conditions for reliability, ease of use, and improved productivity.
