@@ -267,6 +267,76 @@ consul kv get name
 Overview of AutoPilot:
 ======================
 Overview of AutoPilot Pattern:
-The autopilot pattern automates in code the repetitive and boring operational tasks of an
-application, including startup, shutdown, scaling, and recovery from anticipated failure
-conditions for reliability, ease of use, and improved productivity.
+The autopilot pattern automates in code the repetitive and boring operational tasks of an application, including startup, shutdown, scaling, and recovery from anticipated failure conditions for reliability, ease of use, and improved productivity.
+
+Use-Case 1 - Dead Servers:
+It will take 72 hours for dead servers to be automatically reaped or an operator must write a script to consul force-leave.
+Autopilot helps prevent these kinds of outages by quickly removing failed servers as soon as a replacement Consul server comes online.
+
+Use-Case 2 - Server Stabilization Time:
+When a new server is added to the data center, there is a waiting period where it must be healthy and stable for a certain amount of time before being promoted to a full, voting member.
+This is defined by the ServerStabilizationTime autopilot's parameter and by default is 10 seconds.
+In case your configuration requires a different amount of time for the node to get ready, you can tune the parameter and assign it to a different duration.
+
+Additional Features for Enterprise:
+There are some additional features of autopilot that are available in Consul Enterprise
+a) Redundancy Zones
+b) Automated upgrades
+
+Example:
+First Server (consul-01):
+consul agent -server -bootstrap-expect=3 -node=consul-server -bind=134.209.155.89 -data-dir=/tmp/consul -client=0.0.0.0 -ui=true
+
+Second Server (consul-02):
+consul agent -server=true -client=0.0.0.0 -bind 165.22.222.190 -data-dir /tmp/consul
+consul join 134.209.155.89
+
+Third Server (demo-02):
+consul agent -server=true -client=0.0.0.0 -bind 165.22.222.190 -data-dir /tmp/consul
+consul join 134.209.155.89
+
+See Details of Servers & Verify Autopilot settings (consul-01):
+consul operator raft list-peers
+consul operator autopilot get-config
+
+Modify Autopilot Settings (leader node):
+consul operator autopilot set-config -server-stabilization-time=60s
+
+Leave and Join consul-02 node:
+consul leave
+consul agent -server=true -client=0.0.0.0 -bind [NODE-IP]  -data-dir /tmp/consul
+consul join [FIRST-SERVER-IP]
+
+Monitor the data to see how much time it takes for it to be added as Voter (consul-01):
+consul operator raft list-peers
+
+Automatically joining servers:
+==============================
+
+Approaches to join servers:
+There are multiple options for joining the servers:
+a) Specify a list of servers with -join and start_join options.
+b) Specify a list of servers with -retry-join option
+c) Use automatic joining by tag for supported cloud environments with the -retry-join
+
+You can choose the method which best suits your environment and specific use-case.
+
+Approach1: 
+> consul join server-node
+If server is not available, this command will fail and you will see that your cluster is not created.
+
+Approach2: Retry Join:
+Retry join is similar to -join but allows retrying a join until its successful.
+> consul agent -retry-join "10.0.4.67"
+This is useful for cases where you know the address will eventually be available.
+retry_join could be more appropriate to help mitigate node startup race conditions when automating a consul cluster deployment.
+
+Example:
+Pre-Requisite:
+Make sure that consul is stopped via systemd Data-Dir path should be empty in the client.
+
+Server:
+consul agent -dev -client=0.0.0.0 -bind 159.65.145.160
+
+Client:
+consul agent -retry-join 159.65.145.160 -bind  134.209.154.246 -data-dir /root/consul -retry-interval 5s
