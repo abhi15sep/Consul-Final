@@ -1,0 +1,209 @@
+Overview of Consul Enterprise:
+==============================
+Consul Enterprise includes capabilities that improve failure resilience, read scalability, and managing access in accordance with organizational policies.
+Some of the unique features include:
+Audit Logging
+Automated Backups
+Namespaces
+Redundancy Zones
+Automated Upgrades
+Enhanced Read Scalability
+
+Example:
+Documentation:
+https://www.consul.io/commands/license https://www.hashicorp.com/products/consul/trial
+
+Step 1 Install Consul Enterprise:
+wget https://releases.hashicorp.com/consul/1.8.6+ent/consul_1.8.6+ent_linux_amd64.zip
+yum -y install unzip
+unzip consul_1.8.6+ent_linux_amd64.zip
+which consul
+rm -f /usr/bin/consul
+mv consul /usr/bin
+
+Step 2: Add a license
+cd /etc/consul.d
+systemctl start consul
+systemctl status consul
+consul license get
+nano consul.lic
+consul license put @consul.lic
+
+Consul Namespaces:
+===================
+Overview of Namespaces:
+Namespaces provide separation for teams within a single organization enabling them to share
+access to one or more Consul datacenters without conflict.
+
+
+Example:
+Pre-Requisite: Create two namespaces named alice-team and bob-team
+
+i) Create First Namespace:
+nano alice-team.hcl
+name = "alice-team"
+consul namespace write alice-team.hcl
+
+ii) Create Second Namespace:
+nano bob-team.hcl
+name = "bob-team"
+consul namespace write bob-team.hcl
+
+Step 1 Create Service for Bob Team:
+nano web-bob.hcl
+
+service {
+  name = "web-service"
+  port = 8080
+  namespace = "bob-team"
+}
+
+Step 2 Create Service for Alice Team:
+nano web-bob.hcl
+
+service {
+  name = "web-service"
+  port = 9080
+  namespace = "alice-team"
+}
+
+rm -f alice-team.hcl bob-team.hcl
+consul reload
+
+Step 3 Create Service for Default Namespace:
+web-default.hcl
+
+service {
+  name = "web-service"
+  port = 1080
+}
+
+DNS Interface:
+Following is the syntax for the DNS query:
+
+<service-name>.service.<datacenter>.consul  << Default
+<service-name>.service.<namespace>.<datacenter>.consul
+
+
+Actual Query Command:
+dig @localhost -p 8600 web-service.service.consul SRV
+dig @localhost -p 8600 web-service.service.alice-team.dc1.consul SRV
+dig @localhost -p 8600 web-service.service.bob-team.dc1.consul SRV
+
+Automated Backups in Enterprise:
+===============================
+Consul Snapshot Agent is an enterprise-only feature that automatically manages on taking snapshots, backup rotation, and sending backup files offsite to Amazon S3
+Consul Enterprise enables you to run the snapshot agent within your environment as a service like systemd.
+> consul snapshot agent
+
+Example:
+Documentation:
+https://www.consul.io/commands/snapshot/agent
+
+Command:
+consul snapshot agent
+consul snapshot inspect consul-1605955903423990211.snap
+
+Overview of Redundancy Zones:
+============================
+Overview of Redundancy Zones:
+Redundancy zones is a Consul autopilot feature that makes it possible to run one voter and any number of non-voters in each defined zone.
+
+Use-Case:
+If only the voter is lost in an availability zone, the autopilot will promote the non-voter to voter automatically, putting the hot standby server into service quickly.
+
+Important Note:
+Non-voting servers still receive data from the cluster replication, however, they do not take part in quorum election operations.
+
+Example:
+
+Consul 01:
+data_dir =  "/root/consul"
+bind_addr = "172.17.0.2"
+client_addr = "0.0.0.0"
+bootstrap_expect = 3
+server = true
+node_meta {
+  zone = "zone1"
+}
+
+consul agent --config-dir /etc/consul.d/
+
+Consul 02:
+data_dir =  "/root/consul"
+bind_addr = "172.17.0.3"
+client_addr = "0.0.0.0"
+bootstrap_expect = 3
+start_join = ["172.17.0.2"]
+server = true
+node_meta {
+  zone = "zone2"
+}
+
+consul agent --config-dir /etc/consul.d/
+
+Consul 03:
+data_dir =  "/root/consul"
+bind_addr = "172.17.0.4"
+client_addr = "0.0.0.0"
+bootstrap_expect = 3
+start_join = ["172.17.0.2"]
+server = true
+node_meta {
+  zone = "zone3"
+}
+
+consul agent --config-dir /etc/consul.d/
+
+Update Autopilot configuration to reflect node_meta:
+consul operator autopilot set-config -redundancy-zone-tag=zone
+consul operator autopilot get-config
+consul operator raft list-peers
+
+Consul 04:
+data_dir =  "/root/consul"
+bind_addr = "172.17.0.5"
+client_addr = "0.0.0.0"
+bootstrap_expect = 3
+server = true
+start_join = ["172.17.0.2"]
+node_meta {
+  zone = "zone1"
+}
+autopilot {
+  redundancy_zone_tag = "zone"
+}
+
+consul agent --config-dir /etc/consul.d/
+
+Consul 05:
+data_dir =  "/root/consul"
+bind_addr = "172.17.0.6"
+client_addr = "0.0.0.0"
+bootstrap_expect = 3
+start_join = ["172.17.0.2"]
+server = true
+node_meta {
+  zone = "zone2"
+}
+autopilot {
+  redundancy_zone_tag = "zone"
+}
+
+consul agent --config-dir /etc/consul.d/
+
+Consul 06:
+data_dir =  "/root/consul"
+bind_addr = "172.17.0.7"
+client_addr = "0.0.0.0"
+bootstrap_expect = 3
+start_join = ["172.17.0.2"]
+server = true
+node_meta {
+  zone = "zone3"
+}
+autopilot {
+  redundancy_zone_tag = "zone"
+}
+
+consul agent -config-dir /etc/consul.d/
