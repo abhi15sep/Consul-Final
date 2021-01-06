@@ -340,3 +340,72 @@ consul agent -dev -client=0.0.0.0 -bind 159.65.145.160
 
 Client:
 consul agent -retry-join 159.65.145.160 -bind  134.209.154.246 -data-dir /root/consul -retry-interval 5s
+
+Cloud AutoJoin:
+===============
+Overview of Cloud Auto-Join:
+retry-join accepts a unified interface using the go-discover library for automatically joining a consul datacenter using cloud metadata.
+
+Working Steps:
+The instance bootstraps and install consul
+Init system starts consul with the configuration to join via EC2 metadata
+On start, consul queries the EC2 metadata service with ec2:DescribeInstances to list all instance tags.
+Consul extracts the private ip address of the other EC2 instances which have the configured tag name and tag value from the metadata
+Consul runs consul join on those private IP addresses.
+
+Example:
+Documentation Referred:
+https://www.consul.io/docs/install/cloud-auto-join
+
+IAM Role Associated with EC2 Instance:
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "ec2:DescribeInstances",
+            "Resource": "*"
+        }
+    ]
+}
+Make sure that security group allows connections between consul-server and consul-client.
+
+consul-server:
+consul agent -dev -bind 172.31.87.159
+
+consul-client:
+consul agent -retry-join "provider=aws tag_key=Name tag_value=consul-server" -data-dir /root/consul -retry-interval 5s
+
+Consul Logs:
+===========
+Consul Monitor:
+The monitor command is used to connect and follow the logs of a running consul agent.
+The amount of logged data depends on the overall logging level.
+
+Available log levels are:
+Trace
+Debug
+Info (default)
+Warn
+Err
+
+> consul monitor -log-level=trace
+
+Consul Debug:
+The consul debug command monitors a consul agent for the specified period of time, recording information about the agent, cluster and environment to an archive written to the current directory.
+> consul debug
+
+Reloadable Configuration:
+=========================
+Overview of Reloadable Configuration:
+Reloadable configuration does not reload all configuration items. The items which are reloaded includes:
+services
+ACL Tokens
+Configuration Entry Bootstrap
+Checks
+Discard Check Output
+HTTP Client address
+Log level
+Node metadata
+Watches
