@@ -1,0 +1,90 @@
+Module 12: Consul Connect:
+==========================
+Consul Connect provides service-to-service connection authorization and encryption using mutual Transport Layer Security (TLS).
+
+a) Works based on Mutual TLS
+b) Layer 4 proxy.
+
+
+Module 13: Important Configurations - Connect:
+=============================================
+After writing the connect configuration, make sure to start connect proxy.
+
+service {
+    name: "frontend-service"
+    port: 8080
+
+    connect {
+        sidecar_service {
+            proxy {
+                upstreams = [
+                    {
+                        destination_name = "backend-service"
+                        local_bind_port = 5000 
+                    }
+                ]
+            }
+        }
+    }
+}
+
+destination_name - name of the service or prepared query to route connect to.
+local_bind_port - Specifies the port to bind a local listener to for the applicationto make outbound connections to this upstream.
+upstream - Specifies the upstream services this proxy should create listeners for.
+
+Module 14: Consul ACL Configuration:
+====================================
+Consul provides an optional Access Control List (ACL) system which can be used to control access to data and APIs.
+During cluster bootstrapping when ACLs are enabled both the special anonymous and the master token will be injected.
+
+ACL = {
+    enabled = true
+    default_policy = "deny"
+    enable_token_persistence = true
+}
+
+Module 15: Bootstrap Token:
+=========================== 
+During the bootstrap process, a master token is generated.
+The master token is associated with the built-in Global Management policy giving it unrestricted privileges.
+> consul acl bootstrap
+
+
+Module 16: Anonymous Tokens:
+============================
+The anonymous token is used when a request is made to Consul without specifying a bearer token.
+When created, it will be assigned 00000000-0000-0000-0000-000000000002 for its Accessor ID and anonymous for its Secret ID.
+The anonymous token's description and policies may be updated but Consul will prevent this token's deletion.
+
+Module 17: Authentication in API Requests:
+==========================================
+When authentication is enabled, a Consul token should be provided to API requests using the X-Consul-Token header or with the Bearer scheme in the authorization header.
+> curl --header "X-Consul-Token: <consul token>" http://127.0.0.1:8500/v1/agent/members
+> curl --header "Authorization: Bearer <consul token>" http://127.0.0.1:8500/v1/agent/members
+
+Module 18: Referencing to Token :
+=================================
+Token can be referenced in various ways, these include:
+1) Using the token on the command line with the -token flag
+2) File containing the ACL token to use in the request instead of one specified via the -token
+argument. -token-file This can also be specified via the CONSUL_HTTP_TOKEN_FILE environment variable.
+
+CONSUL_HTTP_TOKEN
+
+Important Points:
+When using authentication, clients should communicate via TLS.
+Previously token was provided via a ?token= query parameter. This functionality exists on many endpoints for backward compatibility, but its use is highly discouraged since it can show up in access logs as part of the URL.
+
+Module 19: Creating Tokens via CLI:
+=====================================
+A token can have multiple sets of policies associated with it.
+> consul acl token create -policy-name policy-a policy-name policy-b
+
+Module 20: Intentions:
+======================
+Intentions define access control for services via Connect and are used to control which services may establish connections or make requests
+
+CLI commands                     Description
+consul intention create web db   Create an intention for web => db
+consul intention check web db    Checks whether a connection attempt between two services would be authorized given the current set of intentions and consul Configurations
+
