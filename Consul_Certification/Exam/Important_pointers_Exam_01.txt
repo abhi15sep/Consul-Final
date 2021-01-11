@@ -1,0 +1,19 @@
+Module 1: Consul Dev Mode:
+===========================
+The Dev server mode in Consul is useful for local development, testing, and exploration.
+a) Not very secure.
+b) In-memory mode
+
+Command:
+consul agent -dev
+
+Module 2: Consul Server Mode:
+=============================
+Running consul in server mode (non-dev) allows customers to have flexibility related to the option sets that can be used.
+
+Important Flags            Description
+server                     Providing this flag specifies that you want the agent to start in server mode.
+-bootstrap-expect          This tells the consul server how many servers the datacenter should have in total
+-node                      Each node in a datacenter must have an unique name. By default, Consul uses the hostname of the machine, but you can manually override it and set it to agent-one.
+-bind and -data-dir        Address agent will listen and Storing state data.
+config-dir                 This flag tells consul where to look for its configuration. Standard location is /etc/consul.d
