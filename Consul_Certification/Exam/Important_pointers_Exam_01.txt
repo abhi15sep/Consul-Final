@@ -99,3 +99,49 @@ Script + Interval            These checks depends on invoking an external applic
 HTTP + Interval              These checks make an HTTP GET request to the specified URL, waiting the specified interval amount of time between requests. The status of the service depends on the HTTP response code: any 2XX code is considered passing.
 TCP + Interval               These checks make an TCP connection attempt to the specified IP/hostname and port, waiting interval amount of time between attempts.
 
+Module 9: Script Checks:
+========================
+A check script is generally free to do anything to determine the status of the check.
+
+{
+  "service": {
+    "name": "web",
+    "port": 80,
+    "check": {
+    "args": [
+        "curl",
+        "127.0.0.1"
+      ],
+      "interval": "10s",
+      "timeout": "5s"
+    }
+  }
+}
+
+Module 10: Multiple Health Checks:
+=================================
+We can define multiple health checks if a requirement arises.
+
+{
+    "checks": [
+        {
+            "id": "chk1",
+            "name": "mem",
+            "args": ["/bin/check_mem", "-limit", "256MB"],
+            internal: "5s"
+        },
+        {
+            "id": "chk2",
+            "name": "/health",
+            "http": "http://localhost:5000/health",
+            internal: "15s"
+        }
+    ]
+}
+
+Module 11: Service Lookups:
+===========================
+DNS interface can be used for service level lookups.
+Healthy services are returned in the output.
+
+> dig @127.0.0.1 -p 8600 consul.service.consul SRV 
