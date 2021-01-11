@@ -17,3 +17,85 @@ server                     Providing this flag specifies that you want the agent
 -node                      Each node in a datacenter must have an unique name. By default, Consul uses the hostname of the machine, but you can manually override it and set it to agent-one.
 -bind and -data-dir        Address agent will listen and Storing state data.
 config-dir                 This flag tells consul where to look for its configuration. Standard location is /etc/consul.d
+
+Example Questions based on a consul.hcl file of a server
+1. Where will agent store it’s local state information? - data_dir = /etc/consul.d/consul-dir
+2. Which address will be used for internal cluster communication? - bind_addr = "134.209.155.89"
+3. Which datacenter will the agent be associated with? - datacenter = "India"
+4. How many servers will be part of the cluster - bootstrap_expect = 1
+5. Is this agent joining as a server or a client? - server = true
+
+data_dir = /etc/consul.d/consul-dir
+bind_addr = "134.209.155.89"
+client_addr = "0.0.0.0"
+bootstrap_expect = 1
+node_name = "consul-server"
+ui = true
+server = true
+datacenter = "India"
+
+Module 3: Connection Approaches to Consul:
+=========================================
+There are multiple ways to connect with Consul:
+GUI, API as well as CLI
+
+Module 4: Binding to IP Address:
+================================
+If you start consul agent on a server with multiple interfaces, you will receive the following error:
+> Multiple private IPV4 addresses found. please configure one with 'bind'
+
+If you are using the IP associated with the primary eth0 interface, you can run the following command:
+consul agent -bind '{{ GetInterfaceIP "eth0" }}'
+
+Module 5: Service Discovery:
+============================
+Consul enables services to discover each other by storing location information (like IP addresses) in a single registry.
+NOTE: Know how to create services in Consul both via CLI and GUI
+
+Command to create a service from CLI:
+> consul services register web.json
+
+Module 6: ID and Name Parameter in Service Definition:
+======================================================
+The service name is not equal to the id parameter.
+If name conflicts, then id parameter is used very useful.
+
+{
+    "service": {
+        "name": "web",
+        "id": "web1",
+        "port": 8080,
+        "tags": ["v1"]
+    }
+}
+
+
+Module 7: Health Checks :
+========================
+Consul health checks allow us to track the health of deployed services.
+
+{
+    "service": {
+        "name": "web",,
+        "port": 80,
+        "check": {
+            "args": [
+                "curl",
+                "127.0.0.1"
+            ],
+            "interval": "10s",
+            "timeout": "5s"
+        }
+    }
+}
+
+Module 8: Monitoring a Service:
+===============================
+One of the primary roles of the agent is the management of system-level and application-level health checks.
+A health check is considered to be application-level if it is associated with a service
+
+Health Check Types:          Description
+Script + Interval            These checks depends on invoking an external application that performs the check, exits with an appropriate exit code, and potentially generates some output.
+HTTP + Interval              These checks make an HTTP GET request to the specified URL, waiting the specified interval amount of time between requests. The status of the service depends on the HTTP response code: any 2XX code is considered passing.
+TCP + Interval               These checks make an TCP connection attempt to the specified IP/hostname and port, waiting interval amount of time between attempts.
+
