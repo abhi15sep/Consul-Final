@@ -1,0 +1,134 @@
+Module 35: Methods for Distributing Certificates:
+=================================================
+There are two methods for distributing client certificates: operator and auto encryption
+With auto-encryption, you can configure the Consul servers to automatically distribute certificates to the clients.
+This method stores the certificates in memory, they are not persisted.
+
+The operator method is recommended if you need to use a third-party CA
+
+
+Module 36: Gossip Encryption in Existing DC :
+============================================
+
+1. verify_incoming - If set to true, consul requires that all incoming connections make use of TLS and that the client provides a certificate signed by a certificate authority from the ca_file or ca_path.
+
+2. verify_outgoing - If set to true, consul requires that all outgoing connections from this agent make use of TLS and that the server provides a certificate signed by a certificate authority from the ca_file or ca_path.
+
+3. verify_server_hostname - If set to true, consul verifies for all outgoing TLS connections that the TLS certificate presented by the servers matches server.<datacenter>.<domain> hostname.
+
+
+Module 37: Rotating Gossip Encryption keys:
+=========================================== 
+There are four primary steps for the entire process of gossip key rotation.
+Generate a new encryption key.
+Add new key to the keyring
+Promote new key to primary
+Remove old key from the keyring.
+
+> Consul keyring -list
+
+Module 38: Approaches to Join Servers:
+======================================
+There are multiple options for joining the servers.
+Specify a list of servers with -join and start_join options.
+Specify a list of servers with -retry-join option.
+Use automatic joining by tag for supported cloud environments with the -retry-join.
+
+Module 39: Cloud Auto-Join:
+===========================
+retry-join accepts a unified interface using the go-discover library for automatically joining a Consul datacenter using cloud metadata.
+
+Module 40: envconsul:
+=====================
+Envconsul provides a convenient way to launch a subprocess with environment variables populated from HashiCorp Consul and Vault.
+
+Key             value
+address         1.2.3.4
+max_conns       5
+port            80
+        |
+        |
+envconsul -prefix my-app env | egrep 'address|port|max_conns'
+
+
+Module 41: Sidecar Proxy Support - Consul Connect:
+==================================================
+Consul includes its own built-in Layer 4 (L4) proxy for testing and development but also offers first-class support for Envoy as a sidecar proxy.
+
+Envoy is an open-source edge and service proxy.
+It comes with various additional features, some of these include:
+Support for HTTP/2 and gRPC
+Advanced Load Balancing
+Deep observability of L7 traffic
+
+
+Module 42: Reloadable Configuration:
+====================================
+Reloading configuration does not reload all configuration items. The items which are reloaded
+include:
+
+Services
+ACL Tokens
+Configuration Entry Bootstrap
+Checks
+Discard Check Output
+HTTP Client Address
+Log level
+Node Metadata
+Watches
+
+Module 43: Consul Monitor:
+==========================
+The monitor command is used to connect and follow the logs of a running Consul agent.
+The amount of logged data depends on the overall logging level.
+Available log levels are:
+Trace
+Debug
+Info (default)
+Warn
+Err
+
+Module 44: Consul Debug:
+=======================
+The consul debug command monitors a Consul agent for the specified period of time, recording information about the agent, cluster, and environment to an archive written to the current directory.
+
+> consul debug
+
+Consul Snapshot Inspect:
+========================
+The snapshot inspect command is used to inspect an atomic, point-in-time snapshot of the state of the consul servers.
+
+Version field displays the snapshot format version. This only refers to the stracture of the snapshot, not the data contained within.
+> consul snapshot inspect backup.snap
+
+Module 45: Script Checks:
+=========================
+There are two primary ways of achieving script checks:
+Enabling script checks in some configurations may introduce a remote execution vulnerability that is known to be targeted by malware.
+It is strongly recommended to use enable_local_script_checks
+
+Configuration Flag                Description
+enable_local_script_checks        Enable scripts check defined in local configs file. Script checks defined via the HTTP API will not be allowed.
+enable_script_checks              Enable scripts check regardless of how they are defined.
+
+Module 46: Gossip Protocol Uses:
+================================
+Consul uses a gossip protocol to manage membership and broadcast messages to the cluster.
+Membership information allows clients to automatically discover servers, reducing the amount of configuration needed.
+The distributed failure detection allows the work of failure detection to be shared by the entire cluster instead of concentrated on a few servers.
+The gossip pool allows for reliable and fast event broadcasts.
+
+Module 47: Miscellaneous Pointers:
+===================================
+The communication between Consul agents is secured using TLS.
+
+Difference between consul keygen and consul keyring!
+
+Consul Snapshot Restores involve a potentially dangerous low-level Raft operation that is not designed to handle server failures during a restore.
+This operation is primarily intended to be used when recovering from a disaster, restoring into a fresh cluster of Consul servers.
+
+The WAN pool is globally unique, as all servers should participate in the WAN pool regardless of the data center.
+If using multiple WAN joined datacenters, be sure to use the same encryption key in all datacenters.
+
+Consul Enterprise provides the ability to scale clustered Consul servers to include voting andnon-voting servers.
+Expanding your Consul cluster in this way can scale reads without impacting write latency.
