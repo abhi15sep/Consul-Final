@@ -1,0 +1,179 @@
+Module 21: Key-Value in Consul:
+==============================
+Objects are opaque to Consul, meaning there are no restrictions on the type of object stored in a key/value entry. The main restriction on an object is size - the maximum is 512 KB.
+If you want to list all the keys, consul kv get -recurse command can be used.
+
+Command                                     Description
+consul kv put max_memory 512MB              Add 512MB in max_memory key
+consul kv get max_memory                    fetch the contents of max_memory
+consul kv get -recurse                      Feth all the keys
+
+Module 22: API Endpoint for KV:
+===============================
+By default, the returned value from API is a base64-encoded blob of data
+> curl --header "X-Consul-Token:3456565524324234323254654345232" http://127.0.0.1:8500/v1/kv/db?pretty 
+
+After using ?raw
+> curl --header "X-Consul-Token:3456565524324234323254654345232" http://127.0.0.1:8500/v1/kv/db?raw
+password
+
+
+Module 23: Find list of all keys via API:
+=========================================
+The keys specify to return only keys (no values or metadata). Specifying this implies recurse.
+This is specified as part of the URL as a query parameter.
+
+> curl --header "X-Consul-Token:3456565524324234323254654345232" http://127.0.0.1:8500/v1/kv/?keys
+["db","key-1","key-2","key-3"]
+
+
+Module 24: Consul Template:
+===========================
+Consul Template queries a Consul instance and updates any number of specified templates on the filesystem
+Consul Template is not part of the consul binary.Can be used with -once to run only once.
+
+   Template
+{ key "course-name" }   <------> Consul    <---------->  key          value  
+output: consul01                                         course-name  consul01
+
+
+Module 25: Consul Watches:
+==========================
+Watches feature in Consul checks for changes made to the Consul resource.
+When an update is detected, an external handler is invoked.
+Watch functionality can watch for a wide variety of resources, these include:
+
+key
+keyprefix
+services
+nodes
+checks
+events
+
+Module 26: Prepared Query:
+===========================
+You should be able to identify differences in a service definition and prepared query.
+Endpoint: web-service.query.consul
+
+Service definition:
+{
+    "service": {
+        "name": "web",
+        "id": "web2",
+        "port", 9080,
+        "tags": ["v2"]
+    }
+}
+
+Prepared Query:
+
+{
+    "Name": "web-Service",
+    "Service": {
+        "Service": "Web",
+        "Tags": ["v2"]
+    }
+}
+
+Module 27: Prepared Query - Failover Policy:
+===========================================
+Consul servers in the local datacenter will attempt to find healthy instances of the "database" service within the dc1
+If none are available locally, the Consul servers will make an RPC request to the Consul servers in "singapore" to perform the query there.
+Finally, an error will be returned if none of these datacenters had any instances available.
+
+{
+    "Name": "failover",
+    "Service": {
+        "Service": "database",
+        "Tags": ["v1"],
+        "Failover": {
+            "Datacenters": ["singapore"]
+        }
+    }
+}
+
+Module 28: Backup & Restore:
+============================
+Consul provides the snapshot command that saves a point-in-time snapshot of the state of the Consul servers. 
+Some of the important data includes:
+
+Key-Value entries
+the service catalog
+prepared queries
+sessions
+ACLs
+
+Commands                               Description
+consul snapshot save backup.snap       Takes backup and stores it to backup.snap file.
+consul snapshot restore backup.snap    Restore data from the backup.
+
+
+Module 29: Overview of Consul Enterprise:
+=========================================
+Consul Enterprise includes capabilities that improve failure resilience, read scalability, and managing access in accordance with organizational policies.
+
+Some of the unique features include:
+Audit Logging
+Automated Backups
+Namespaces
+Redundancy Zones
+Automated Upgrades
+Enhanced Read Scalability
+Sentinel
+
+Module 30: Redundancy Zones:
+============================
+Redundancy zones is a Consul autopilot feature that makes it possible to run one voter and any number of non-voters in each defined zone.
+
+voters                      voters                  voters
+consul01 <-------------->   consul02 <---------->   consul03
+   |                           |                       |
+   |                           |                       |
+   |                           |                       |
+Consul04                    Consul05                 Consul06       
+non-voters                  non-voters               non-voters
+
+  A-Z1                         A-Z2                     A-Z3
+
+If only the voter is lost in an availability zone, the autopilot will promote the non-voter to voter automatically, putting the hot standby server into service quickly.
+
+Non-voting servers still receive data from the cluster replication, however, they do not take part in quorum election operations.
+
+Module 31: Important Pointers for Quorum:
+=========================================
+We should maintain an odd number of nodes within the cluster.
+
+Cluster Size  Majority  Fault Tolerance
+1                0             0         
+2                2             0  
+3                2             1
+4                3             1
+5                3             2
+6                4             2
+7                4             3
+
+
+Module 32: Consul Snapshot Agent:
+=================================
+Consul Snapshot Agent is an enterprise-only feature that automatically manages on taking snapshots, backup rotation, and sending backup files offsite to Amazon S3
+Consul Enterprise enables you to run the snapshot agent within your environment as a service like systemd.
+
+> consul snapshot agent
+
+Module 33: Default Ports in Consul:
+===================================
+Consul uses the following ports for communication.
+
+Port Number                   Description
+8600(TCP and UDP)             DNS server
+8500 (TCP)                    HTTP API (GUI as well)
+8501                          HTTPS API
+8301(TCP and UDP)             Handle gossip in the LAN
+8302(TCP and UDP)             Used by servers to gossip over the WAN 
+8300 (TCP only)               Server RPC to handle incoming requests from other agents
+21000 to 21255                Min and Max port for sidecar service
+
+
+Module 34: Namespaces:
+======================
+Namespaces provide separation for teams within a single organization enabling them to share access to one or more Consul datacenters without conflict.
