@@ -703,7 +703,7 @@ If set to "true", Consul verifies for all outgoing TLS connections that the TLS 
 
 Overview of Verify server hostname:
 In order to authenticate consul servers, servers are provided with a special certificate - one that contains server.dc1.consul in the Common Name and in the Subject Alternative Name.
-If you enable verify_server_hostname, only agent provides sucj certificate are allowed to boot as server.
+If you enable verify_server_hostname, only agent provides such certificate are allowed to boot as server.
 > openssl x509 -in dc1-server-consul-0.pem -noout -text
 This configuration is critical to prevent a compromised client from being restarted as server.
 

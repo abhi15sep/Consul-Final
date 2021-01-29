@@ -130,5 +130,5 @@ This operation is primarily intended to be used when recovering from a disaster,
 The WAN pool is globally unique, as all servers should participate in the WAN pool regardless of the data center.
 If using multiple WAN joined datacenters, be sure to use the same encryption key in all datacenters.
 
-Consul Enterprise provides the ability to scale clustered Consul servers to include voting andnon-voting servers.
+Consul Enterprise provides the ability to scale clustered Consul servers to include voting and non-voting servers.
 Expanding your Consul cluster in this way can scale reads without impacting write latency.
